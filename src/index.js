@@ -9,8 +9,10 @@ const appState = {
     }
 }
 function renderApp(appState) {
-    renderTitle(appState.title)
-    renderContent(appState.content)
+    // 由于被listeners push进去的是renderApp函数，参数为getState函数，所以在此执行一下， 获取数据后进入渲染
+    const date = appState()
+    renderTitle(date.title)
+    renderContent(date.content)
 }
 
 function renderTitle(title) {
@@ -39,20 +41,28 @@ function stateChanger(state, action) {
 }
 
 // 抽离 dispatch 方法，并且将数据的获取放入此方法
+
+// 增加subscribe 的函数，
 function createStore(state, stateChanger) {
+    const listeners = []
+    // 将参数renderApp 放入数组中。
+    const subscribe = (listener)=>listeners.push(listener)
     const getState = ()=> state
-    const dispatch = (action) => stateChanger(state, action)
-    return {getState, dispatch}
+    const dispatch = (action) => {
+        stateChanger(state, action)
+        //循环执行数组中的renderApp函数
+        listeners.forEach((listener)=>listener())
+    }
+    return {getState, dispatch,subscribe}
 }
 
 const store = createStore(appState, stateChanger)
 
 // 从createStore中获取state数据
-renderApp(store.getState())
+store.subscribe(()=>(renderApp(store.getState)))
 
 
 // 修改源数据
-store.dispatch({type: 'UPDATE_TITLE_TEXT', text: '《React.js 小书》'})
+store.dispatch({type: 'UPDATE_TITLE_TEXT', text: '正在学习redux'})
 store.dispatch({type: 'UPDATE_TITLE_COLOR', color: 'blue'})
-
-renderApp(store.getState())
+store.dispatch({type: 'UPDATE_TITLE_COLOR', color: 'red'})
